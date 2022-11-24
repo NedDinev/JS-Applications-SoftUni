@@ -44,7 +44,7 @@ async function request(method, url, data) {
 }
 
 //decorate request with methods that the server support
-export const get = (url) => request("get", url);
-export const post = (url) => request("post", url);
-export const put = (url) => request("put", url);
-export const del = (url) => request("delete", url);
+export const get = request.bind(null, "get");
+export const post = request.bind(null, "post");
+export const put = request.bind(null, "put");
+export const del = request.bind(null, "delete");

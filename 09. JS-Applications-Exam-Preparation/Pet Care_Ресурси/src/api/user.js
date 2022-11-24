@@ -6,7 +6,7 @@ export async function login(email, password) {
     _id,
     email: resultEmail,
     accessToken,
-  } = await post(`/users/login`, { email, password });// destructured data from request
+  } = await post("/users/login", { email, password }); // destructured data from request
 
   setUserData({
     _id,
@@ -20,7 +20,7 @@ export async function register(email, password) {
     _id,
     email: resultEmail,
     accessToken,
-  } = await post(`/users/register`, { email, password }); // destructured data from request
+  } = await post("/users/register", { email, password }); // destructured data from request
 
   setUserData({
     _id,
@@ -30,6 +30,6 @@ export async function register(email, password) {
 }
 
 export async function logout(email, password) {
-  get(`/users/logout`);
+  get("/users/logout");
   clearUserData();
 }

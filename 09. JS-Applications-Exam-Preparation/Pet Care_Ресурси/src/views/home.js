@@ -1,5 +1,6 @@
 import { html } from "../lib.js";
 
+//get Welcome Page from example.html
 const homeTemplate = () => html` <section class="welcome-content">
   <article class="welcome-content-text">
     <h1>We Care</h1>
@@ -13,6 +14,7 @@ const homeTemplate = () => html` <section class="welcome-content">
   </article>
 </section>`;
 
+//renders home template when called
 export function showHome(ctx) {
   ctx.render(homeTemplate());
 }
