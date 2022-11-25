@@ -1,50 +1,58 @@
-import { getUserData } from "../util.js";
+import { clearUserData, getUserData } from "./utility.js";
 
-const host = "http://localhost:3030"; //server name
+const domain = "http://localhost:3030";
 
-async function request(method, url, data) {
-  //runs all requests
+async function request(url, method, data) {
   const options = {
     method,
     headers: {},
   };
 
-  if (data !== undefined) {
-    // if request has data adds body to headers
-    options.headers["Content-Type"] = "application/json";
+  if (data != undefined) {
+    options.headers["Content-type"] = "application/json";
     options.body = JSON.stringify(data);
   }
 
   const user = getUserData();
 
   if (user) {
-    // if request has user add authorization token to headers
     options.headers["X-Authorization"] = user.accessToken;
   }
 
   try {
-    const response = await fetch(host + url, options);
+    const response = await fetch(domain + url, options);
+
+    if (!response.ok) {
+      if (response.status == 403) {
+        clearUserData();
+      }
+      const error = await response.json();
+      throw new Error(error.message);
+    }
 
     if (response.status == 204) {
-      // means that response request is OK but it's empty
       return response;
+    } else {
+      return response.json();
     }
-    const result = await response.json();
-
-    if (response.ok == false) {
-      // if response request is not ok this will throw an error message to the catch
-      throw new Error(result.message);
-    }
-    // if everything is ok return request response
-    return result;
-  } catch (err) {
-    alert(err.message);
-    throw err; // throws error to the request
+  } catch (error) {
+    alert(error.message);
+    throw error;
   }
 }
 
-//decorate request with methods that the server support
-export const get = request.bind(null, "get");
-export const post = request.bind(null, "post");
-export const put = request.bind(null, "put");
-export const del = request.bind(null, "delete");
+export async function get(url) {
+  return request(url, "GET");
+}
+
+export async function post(url, data) {
+  return request(url, "POST", data);
+}
+
+export async function put(url, data) {
+  return request(url, "PUT", data);
+}
+
+export async function del(url) {
+  return request(url, "DELETE");
+}
