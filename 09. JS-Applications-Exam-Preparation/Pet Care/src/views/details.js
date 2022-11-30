@@ -1,13 +1,20 @@
 import { html, nothing } from "../lib.js";
 import { deleteById, getById } from "../api/data.js";
+import { donate, getDonations, getOwnDonation } from "../api/donations.js";
 
 //get Details from example.html
-const detailsTemplate = (pet, hasUser, isOwner, onDelete) => html`<section
-  id="detailsPage"
->
+const detailsTemplate = (
+  pet,
+  donations,
+  hasUser,
+  isOwner,
+  onDelete,
+  onDonate,
+  onLike
+) => html`<section id="detailsPage">
   <div class="details">
     <div class="animalPic">
-      <img src="${pet.image}" />
+      <img src=${pet.image} />
     </div>
     <div>
       <div class="animalInfo">
@@ -15,37 +22,55 @@ const detailsTemplate = (pet, hasUser, isOwner, onDelete) => html`<section
         <h3>Breed: ${pet.breed}</h3>
         <h4>Age: ${pet.age}</h4>
         <h4>Weight: ${pet.weight}</h4>
-        <h4 class="donation">Donation: 0$</h4>
+        <h4 class="donation">Donation: ${donations}$</h4>
       </div>
-
-      ${hasUser
-        ? html` <!-- if the user is logged, do not display this div-->
-            <div class="actionBtn">
-              ${isOwner
-                ? html`<!-- if the user is creator of the postcard show this-->
-                    <a href="/edit/${pet._id}" class="edit">Edit</a>
-                    <a
-                      @click="${onDelete}"
-                      href="javascript:void(0)"
-                      class="remove"
-                      >Delete</a
-                    >`
-                : html` <a href="#" class="donate">Donate</a>`}
-            </div>`
-        : nothing}
+      ${petControls(pet, hasUser, isOwner, onDelete, onDonate, onLike)}
     </div>
   </div>
 </section>`;
 
+function petControls(pet, hasUser, canDonate, isOwner, onDelete, onLike) {
+  if (hasUser == false) {
+    return nothing;
+  }
+  if (canDonate) {
+    return html` <div class="actionBtn">
+      <a @click=${onLike} href="javascript:void(0)" class="donate">Donate</a>
+    </div>`;
+  }
+  if (isOwner) {
+    return html`<div class="actionBtn">
+      <a href="/edit/${pet._id}" class="edit">Edit</a>
+      <a @click=${onDelete} href="javascript:void(0)" class="remove">Delete</a>
+    </div>`;
+  }
+}
+
 export async function showDetails(ctx) {
   const id = ctx.params.id;
-  const pet = await getById(id);
+  const requests = [getById(id), getDonations(id)];
 
   const hasUser = Boolean(ctx.user);
-  const canDonate = true;
-  const isOwner = hasUser && ctx.user._id == pet._ownerId;
 
-  ctx.render(detailsTemplate(pet, hasUser, canDonate, isOwner, onDelete));
+  if (hasUser) {
+    requests.push(getOwnDonation(id, ctx.user._id));
+  }
+  const [pet, donations, hasDonation] = await Promise.all(requests);
+
+  const isOwner = hasUser && ctx.user._id == pet._ownerId;
+  const canDonate = !isOwner && hasDonation == 0;
+
+  ctx.render(
+    detailsTemplate(
+      pet,
+      donations * 100,
+      hasUser,
+      canDonate,
+      isOwner,
+      onDelete,
+      onLike
+    )
+  );
 
   async function onDelete() {
     const choice = confirm("Are you sure you want to delete this pet?");
@@ -54,5 +79,10 @@ export async function showDetails(ctx) {
       await deleteById(id);
       ctx.page.redirect("/");
     }
+  }
+
+  async function onLike() {
+    await donate(id);
+    ctx.page.redirect("/catalog/" + id);
   }
 }
