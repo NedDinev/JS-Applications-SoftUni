@@ -1,8 +1,9 @@
-import { html } from "../../node_modules/lit-html/lit-html.js";
-import { getPets } from "../api/pets.js";
+import { createPostcard } from "../api/data.js";
+import { html } from "../lib.js";
+import { createSubmitHandler } from "../util.js";
 
-const createTemplate = (onSubmit) => html` <section id="createPage">
-  <form class="createForm" @submit=${onSubmit}>
+const createTemplate = (handler) => html` <section id="createPage">
+  <form class="createForm" @submit=${handler}>
     <img src="./images/cat-create.jpg" />
     <div>
       <h2>Create PetPal</h2>
@@ -36,24 +37,16 @@ const createTemplate = (onSubmit) => html` <section id="createPage">
   </form>
 </section>`;
 
-export async function createPage(ctx) {
-  ctx.render(createTemplate(onSubmit));
+export async function showCreate(ctx) {
+  ctx.render(createTemplate(createSubmitHandler(onCreate)));
 
-  async function onSubmit(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const pet = {
-      name: formData.get("name"),
-      breed: formData.get("breed"),
-      age: formData.get("age"),
-      weight: formData.get("weight"),
-      image: formData.get("image"),
-    };
-    if (!pet.name || !pet.breed || !pet.age || !pet.weight || !pet.image) {
-      return alert("All fields are required!");
+  async function onCreate(data) {
+    const { name, breed, age, weight, image } = data;
+
+    if (!name || !breed || !age || !weight || !image) {
+      return alert("all fields are required");
     }
-    await getPets(pet);
-    e.target.reset();
-    ctx.page.redirect("/");
+    createPostcard(data);
+    ctx.page.redirect("/catalog");
   }
 }
